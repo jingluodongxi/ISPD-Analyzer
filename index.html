@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ISPD-Analyzer is a browser-based platform for isothermal surface potential decay fitting and surface trap spectrum inversion.">
+  <meta name="theme-color" content="#0b1f33">
+  <meta property="og:title" content="ISPD-Analyzer">
+  <meta property="og:description" content="A local-first research platform for ISPD fitting and surface trap spectrum inversion.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ISPD-Analyzer">
+  <meta name="twitter:description" content="A local-first research platform for ISPD fitting and surface trap spectrum inversion.">
+  <meta name="twitter:image" content="assets/og.png">
+  <title>ISPD-Analyzer | 表面电位与陷阱能谱分析</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/site.css">
+  <script src="assets/js/i18n.js" defer></script>
+  <script src="assets/js/home.js" defer></script>
+</head>
+<body class="landing-page">
+  <a class="skip-link" href="#main" data-i18n="common.skip">跳至主要内容</a>
+  <div class="desktop-notice" role="status">
+    <strong data-i18n="common.desktopTitle">建议使用电脑访问</strong>
+    <span data-i18n="common.desktopBody">分析工作台针对 1024px 以上桌面屏幕设计。</span>
+  </div>
+
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="ISPD-Analyzer home">
+      <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+      <span class="brand-copy"><strong>ISPD</strong><em>Analyzer</em></span>
+    </a>
+    <nav class="site-nav" aria-label="Primary navigation">
+      <a href="#capabilities" data-i18n="home.navCapabilities">功能</a>
+      <a href="#method" data-i18n="home.navMethod">方法</a>
+      <a class="nav-cta" href="analyzer/" data-i18n="home.openAnalyzer">进入分析系统</a>
+      <button class="language-toggle" type="button" data-language-toggle aria-label="Switch language">
+        <span data-language-zh>中</span><span class="toggle-divider"></span><span data-language-en>EN</span>
+      </button>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero section-shell">
+      <div class="hero-copy">
+        <p class="eyebrow" data-i18n="home.eyebrow">电介质极化特征评估</p>
+        <h1 data-i18n-html="home.title">从表面电位衰减<br>解析电荷陷阱特征</h1>
+        <p class="hero-lede" data-i18n="home.lede">面向等温表面电位衰减数据的浏览器端研究工具，集成双指数拟合、解析求导与表面陷阱能谱反演。</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="analyzer/">
+            <span data-i18n="home.start">开始分析</span>
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+          </a>
+          <a class="button button-secondary" href="#method" data-i18n="home.viewMethod">查看方法</a>
+        </div>
+        <div class="privacy-line">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5 16 5v4.6c0 3.8-2.4 6.5-6 7.9-3.6-1.4-6-4.1-6-7.9V5l6-2.5Z"/><path d="m7.2 10 1.8 1.8 3.8-4"/></svg>
+          <span data-i18n="home.privacy">数据仅在当前浏览器中处理，不上传服务器</span>
+        </div>
+      </div>
+
+      <div class="research-visual" aria-label="ISPD analysis preview">
+        <div class="visual-header">
+          <div>
+            <span data-i18n="home.visualLabel">分析预览</span>
+            <strong data-i18n="home.visualTitle">表面电位衰减动力学</strong>
+          </div>
+          <span class="live-pill"><i></i><span data-i18n="home.localCompute">本地计算</span></span>
+        </div>
+        <svg class="hero-chart" viewBox="0 0 640 340" role="img" aria-labelledby="chart-title chart-desc">
+          <title id="chart-title">Surface potential decay curve</title>
+          <desc id="chart-desc">Measured points and a fitted double exponential decay curve.</desc>
+          <defs>
+            <linearGradient id="areaFill" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0" stop-color="#19a39a" stop-opacity=".24"/>
+              <stop offset="1" stop-color="#19a39a" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <g class="chart-grid">
+            <path d="M72 44v236M72 280h520"/>
+            <path d="M72 84h520M72 132h520M72 180h520M72 228h520"/>
+            <path d="M176 44v236M280 44v236M384 44v236M488 44v236"/>
+          </g>
+          <path class="chart-area" d="M72 69C112 79 137 98 166 122s48 49 81 70 63 31 102 43 72 14 112 20 83 8 131 11v14H72Z"/>
+          <path class="chart-line" d="M72 69C112 79 137 98 166 122s48 49 81 70 63 31 102 43 72 14 112 20 83 8 131 11"/>
+          <g class="chart-points">
+            <circle cx="78" cy="72" r="5"/><circle cx="105" cy="82" r="5"/><circle cx="142" cy="102" r="5"/>
+            <circle cx="184" cy="139" r="5"/><circle cx="231" cy="180" r="5"/><circle cx="286" cy="210" r="5"/>
+            <circle cx="351" cy="236" r="5"/><circle cx="430" cy="252" r="5"/><circle cx="516" cy="262" r="5"/><circle cx="586" cy="267" r="5"/>
+          </g>
+          <g class="chart-labels"><text x="72" y="310">10⁰</text><text x="280" y="310">10²</text><text x="488" y="310">10⁴</text><text x="10" y="88">V(t)</text></g>
+        </svg>
+        <div class="visual-stats">
+          <div><span data-i18n="home.statModel">拟合模型</span><strong>Double exponential</strong></div>
+          <div><span data-i18n="home.statOutput">核心输出</span><strong>R² · E<sub>t</sub> · N<sub>t</sub></strong></div>
+          <div><span data-i18n="home.statFormat">数据格式</span><strong>CSV · Excel</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="capabilities" class="capabilities section-shell">
+      <div class="section-heading">
+        <p class="eyebrow" data-i18n="home.capEyebrow">核心能力</p>
+        <h2 data-i18n="home.capTitle">围绕可复核分析构建</h2>
+        <p data-i18n="home.capBody">从原始测量数据到可导出的科研图表，每一步都保持参数与边界透明。</p>
+      </div>
+      <div class="capability-grid">
+        <article class="capability-card">
+          <span class="card-index">01</span>
+          <div class="card-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM8 15l2-3 2 2 4-5"/></svg></div>
+          <h3 data-i18n="home.cap1Title">多曲线数据处理</h3>
+          <p data-i18n="home.cap1Body">读取 CSV 或 Excel 时间—电位数据，支持单曲线分析与多组样品对比。</p>
+        </article>
+        <article class="capability-card">
+          <span class="card-index">02</span>
+          <div class="card-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17c3-8 5-9 8-4s5 4 8-6M4 20h16"/></svg></div>
+          <h3 data-i18n="home.cap2Title">解析物理反演</h3>
+          <p data-i18n="home.cap2Body">通过双指数拟合与连续函数解析求导，计算浅、深陷阱能级及面密度。</p>
+        </article>
+        <article class="capability-card">
+          <span class="card-index">03</span>
+          <div class="card-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14"/></svg></div>
+          <h3 data-i18n="home.cap3Title">科研结果导出</h3>
+          <p data-i18n="home.cap3Body">导出 PNG、SVG、PDF 图形及 CSV 参数表，保留实测区间与外推区间标识。</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="method" class="method-section">
+      <div class="section-shell method-grid">
+        <div class="method-copy">
+          <p class="eyebrow" data-i18n="home.methodEyebrow">分析方法</p>
+          <h2 data-i18n="home.methodTitle">从衰减曲线到表观陷阱谱</h2>
+          <p data-i18n="home.methodBody">系统将测量时间范围与模型外推范围明确分离，并在拟合参数触及边界时给出解释提示。</p>
+          <div class="formula-card">
+            <span data-i18n="home.formulaLabel">衰减模型</span>
+            <strong>V(t) = A₁e<sup>−t/τ₁</sup> + A₂e<sup>−t/τ₂</sup> + y₀</strong>
+          </div>
+        </div>
+        <ol class="method-steps">
+          <li><span>01</span><div><strong data-i18n="home.step1Title">导入测量数据</strong><p data-i18n="home.step1Body">识别首测时间并验证时间序列。</p></div></li>
+          <li><span>02</span><div><strong data-i18n="home.step2Title">拟合衰减分量</strong><p data-i18n="home.step2Body">提取快、慢分量幅值与时间常数。</p></div></li>
+          <li><span>03</span><div><strong data-i18n="home.step3Title">反演陷阱特征</strong><p data-i18n="home.step3Body">计算能级、面密度及峰值性质。</p></div></li>
+          <li><span>04</span><div><strong data-i18n="home.step4Title">检查并导出</strong><p data-i18n="home.step4Body">复核边界提示并生成图表和参数表。</p></div></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="closing section-shell">
+      <div><p class="eyebrow" data-i18n="home.closeEyebrow">开始分析</p><h2 data-i18n="home.closeTitle">在浏览器中完成整个反演流程</h2></div>
+      <a class="button button-light" href="analyzer/"><span data-i18n="home.openAnalyzer">进入分析系统</span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg></a>
+    </section>
+  </main>
+
+  <footer class="site-footer section-shell">
+    <div class="brand brand-footer"><span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span><span class="brand-copy"><strong>ISPD</strong><em>Analyzer</em></span></div>
+    <p data-i18n="home.footer">浏览器端等温表面电位衰减与陷阱能谱分析平台</p>
+    <span>© <span data-year></span> ISPD-Analyzer</span>
+  </footer>
+</body>
+</html>
