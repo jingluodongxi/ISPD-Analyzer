@@ -82,6 +82,9 @@ function lmFit(modelFn,jacFn,xData,yData,p0,opts){
 function doubleExpModel(p,t){
   return p[0]*Math.exp(-t/Math.max(Math.abs(p[1]),0.1))+p[2]*Math.exp(-t/Math.max(Math.abs(p[3]),0.1))+p[4];
 }
+function singleExpModel(p,t){
+  return p[0]*Math.exp(-t/Math.max(Math.abs(p[1]),0.1))+p[2];
+}
 function doubleExpJac(p,t){
   var A1=p[0],t1=Math.max(Math.abs(p[1]),0.1),A2=p[2],t2=Math.max(Math.abs(p[3]),0.1);
   var e1=Math.exp(-t/t1),e2=Math.exp(-t/t2);
@@ -152,6 +155,62 @@ function fitDoubleExponential(t, v, vDrop, tRange) {
   return { A1: A1, tau1: tau1, A2: A2, tau2: tau2, y0: y0, r2: r2, success: true };
 }
 
-return{lmFit:lmFit,doubleExpModel:doubleExpModel,doubleExpJacobian:doubleExpJac,fitDoubleExponential:fitDoubleExponential};
-})();
+function fitSingleExponential(t, v, vDrop, tRange) {
+  var vEnd = v[v.length - 1];
+  var vMax = Math.max.apply(null, v);
+  var tauMax = 20 * (t[t.length - 1] - t[0]);
+  var AMax = 5 * Math.max(vMax - vEnd, v[0], 0.01);
+  var y0Min = vEnd * 0.5;
+  var amplitude = Math.max(vMax - vEnd, vDrop, 0.01);
+  var adaptiveTau = Math.max(1, Math.min(tauMax, tRange / 3));
+  var p0Sets = [
+    [amplitude, 30, vEnd],
+    [amplitude, 80, vEnd],
+    [amplitude, adaptiveTau, vEnd],
+    [Math.max(amplitude, vMax * 0.8), Math.max(1, Math.min(tauMax, 800)), vEnd * 0.9]
+  ];
+  var lo = [0, 1, y0Min];
+  var hi = [AMax, tauMax, vEnd + (vMax - vEnd) * 2];
+  var bestP = null, bestCost = Infinity;
 
+  for (var k = 0; k < p0Sets.length; k++) {
+    try {
+      var r = lmFit(singleExpModel, singleExpJac, t, v, p0Sets[k], {
+        maxIter: 500,
+        lower: lo,
+        upper: hi
+      });
+      if (r.cost < bestCost && isFinite(r.cost)) {
+        bestCost = r.cost;
+        bestP = r.params.slice();
+      }
+    } catch (e) {
+      console.warn("Single-exponential LM fit failed for init guess set " + k, e);
+    }
+  }
+
+  if (!bestP) return { success: false };
+
+  var A = bestP[0], tau = bestP[1], y0 = bestP[2];
+  var ssRes = 0, ssTot = 0, vMean = 0;
+  for (var i = 0; i < v.length; i++) vMean += v[i];
+  vMean /= v.length;
+  for (var j = 0; j < v.length; j++) {
+    var pred = singleExpModel([A, tau, y0], t[j]);
+    ssRes += (v[j] - pred) * (v[j] - pred);
+    ssTot += (v[j] - vMean) * (v[j] - vMean);
+  }
+  var r2 = Math.max(0, 1 - ssRes / (ssTot || 1));
+  return { A: A, tau: tau, y0: y0, r2: r2, success: true };
+}
+
+return{
+  lmFit:lmFit,
+  singleExpModel:singleExpModel,
+  singleExpJacobian:singleExpJac,
+  fitSingleExponential:fitSingleExponential,
+  doubleExpModel:doubleExpModel,
+  doubleExpJacobian:doubleExpJac,
+  fitDoubleExponential:fitDoubleExponential
+};
+})();

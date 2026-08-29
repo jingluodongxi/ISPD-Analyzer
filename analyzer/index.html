@@ -37,39 +37,48 @@
         <div class="panel-intro"><span class="section-kicker" data-i18n="analyzer.configuration">分析配置</span><h1 data-i18n="analyzer.setupTitle">准备测量数据</h1><p data-i18n="analyzer.setupBody">导入时间—电位数据并确认物理参数。</p></div>
 
         <section class="control-section">
-          <div class="section-title"><span>01</span><h2 data-i18n="analyzer.dataSource">数据源</h2></div>
-          <div class="segmented-control" role="radiogroup" aria-label="Analysis mode">
-            <label><input type="radio" name="mode" id="radio-single"><span data-i18n="analyzer.single">单曲线</span></label>
-            <label><input type="radio" name="mode" id="radio-multi" checked><span data-i18n="analyzer.multi">多曲线对比</span></label>
-          </div>
+          <div class="section-title section-title-actions"><div><span>01</span><h2 data-i18n="analyzer.measurementDatasets">测量数据集</h2></div><button id="btn-clear-files" class="clear-files" type="button" data-i18n="analyzer.clearAll">清空全部</button></div>
           <label class="upload-zone" id="btn-import">
             <input type="file" id="file-input" accept=".csv,.xlsx,.xls" multiple>
             <span class="upload-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5m0 0L8 9m4-4 4 4M5 15v4h14v-4"/></svg></span>
-            <strong data-i18n="analyzer.importData">导入实验数据</strong>
+            <strong data-i18n="analyzer.addFiles">添加数据文件</strong>
             <small data-i18n="analyzer.formats">CSV、XLSX 或 XLS</small>
           </label>
           <div id="file-empty" class="file-empty" data-i18n="analyzer.noFiles">尚未加载数据文件</div>
           <ul id="file-list" class="file-list"></ul>
         </section>
 
+        <section class="control-section model-section">
+          <div class="section-title"><span>02</span><h2 data-i18n="analyzer.fitModel">拟合模型</h2></div>
+          <div class="model-options" role="radiogroup" aria-label="Fit model">
+            <label class="model-option">
+              <input type="radio" name="fit-model" value="single">
+              <span class="model-option-body"><span class="model-option-heading"><strong data-i18n="analyzer.singleExponential">单指数</strong><i></i></span><span class="model-formula">V(t) = Ae<sup>−t/τ</sup> + y₀</span><small data-i18n="analyzer.singleModelNote">单一主导弛豫过程</small></span>
+            </label>
+            <label class="model-option">
+              <input type="radio" name="fit-model" value="double" checked>
+              <span class="model-option-body"><span class="model-option-heading"><strong data-i18n="analyzer.doubleExponential">双指数</strong><i></i></span><span class="model-formula">V(t) = A₁e<sup>−t/τ₁</sup> + A₂e<sup>−t/τ₂</sup> + y₀</span><small data-i18n="analyzer.doubleModelNote">快、慢两类弛豫过程</small></span>
+            </label>
+          </div>
+        </section>
+
         <section class="control-section parameter-section">
-          <div class="section-title"><span>02</span><h2 data-i18n="analyzer.parameters">物理参数</h2></div>
+          <div class="section-title"><span>03</span><h2 data-i18n="analyzer.parameters">物理参数</h2></div>
           <div class="field-grid">
             <label class="field"><span data-i18n="analyzer.temperature">测试温度</span><div class="input-unit"><input type="number" id="input-T" value="300" step="1"><em>K</em></div></label>
             <label class="field"><span data-i18n="analyzer.frequency">逃逸频率 ν</span><select id="combo-nu"><option value="1e11">1.0 × 10¹¹ s⁻¹</option><option value="1e12" selected>1.0 × 10¹² s⁻¹</option><option value="1e13">1.0 × 10¹³ s⁻¹</option></select></label>
             <label class="field"><span data-i18n="analyzer.permittivity">相对介电常数 εr</span><input type="number" id="input-epsr" value="3.0" step="0.1"></label>
             <label class="field"><span data-i18n="analyzer.thickness">绝缘体厚度</span><div class="input-unit"><input type="number" id="input-d" value="50" step="1"><em>μm</em></div></label>
           </div>
-          <details class="model-disclosure"><summary data-i18n="analyzer.modelDetails">查看模型方程</summary><div><strong>V(t) = A₁e<sup>−t/τ₁</sup> + A₂e<sup>−t/τ₂</sup> + y₀</strong><p data-i18n="analyzer.modelNote">快、慢衰减分量分别用于表征浅、深陷阱的表观贡献。</p></div></details>
         </section>
 
-        <button class="run-button" id="btn-compute" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 2-8 12h7l-1 8 8-12h-7z"/></svg><span data-i18n="analyzer.run">运行物理反演</span></button>
+        <div class="run-group"><span class="run-step">04</span><button class="run-button" id="btn-compute" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 2-8 12h7l-1 8 8-12h-7z"/></svg><span id="run-label">运行双指数分析</span></button></div>
       </aside>
 
       <main class="results-panel">
         <div class="results-header">
           <div><span class="section-kicker" data-i18n="analyzer.results">分析结果</span><h2 id="result-heading" data-i18n="analyzer.decayTitle">表面电位衰减动力学</h2></div>
-          <div class="status-chip ready" id="status-chip"><i></i><span data-i18n="analyzer.ready">就绪</span></div>
+          <div class="results-meta"><span class="model-badge" id="result-model-badge" data-i18n="analyzer.doubleExponential">双指数</span><div class="status-chip ready" id="status-chip"><i></i><span data-i18n="analyzer.ready">就绪</span></div></div>
         </div>
 
         <div class="tab-bar" role="tablist">
@@ -90,11 +99,11 @@
         </section>
 
         <section class="tab-content table-tab" id="tab3-content" role="tabpanel">
-          <div class="table-toolbar"><p data-i18n="analyzer.tableHint">参数按当前勾选的数据文件汇总。</p><button class="export-table" id="btn-export"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v9m0 0 3-3m-3 3L7 9M4 15h12"/></svg><span data-i18n="analyzer.exportCsv">导出 CSV</span></button></div>
-          <div class="table-wrap"><table id="result-table"><thead><tr><th data-i18n="table.file">数据标识</th><th data-i18n="table.firstTime">首测时间 (s)</th><th>R²</th><th>V₀ (V)</th><th data-i18n="table.shallowE">浅陷阱 Eₜ (eV)</th><th data-i18n="table.shallowN">浅陷阱 Nₜ (m⁻²)</th><th data-i18n="table.shallowNature">浅峰性质</th><th data-i18n="table.deepE">深陷阱 Eₜ (eV)</th><th data-i18n="table.deepN">深陷阱 Nₜ (m⁻²)</th><th data-i18n="table.deepNature">深峰性质</th><th>A₁ (V)</th><th>τ₁ (s)</th><th>A₂ (V)</th><th>τ₂ (s)</th><th>y₀ (V)</th></tr></thead><tbody id="result-tbody"></tbody></table><div class="table-empty" id="table-empty" data-i18n="analyzer.noResults">尚无计算结果</div></div>
+          <div class="table-toolbar"><p data-i18n="analyzer.tableHint">参数按当前勾选的数据文件汇总。</p><div class="export-menu" id="export-menu"><button class="export-table" id="btn-export" type="button" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v9m0 0 3-3m-3 3L7 9M4 15h12"/></svg><span data-i18n="analyzer.exportTable">导出表格</span><svg class="chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4"/></svg></button><div class="export-options" role="menu" hidden><button type="button" role="menuitem" data-export-format="csv"><strong>CSV</strong><span data-i18n="analyzer.csvDescription">通用文本格式</span></button><button type="button" role="menuitem" data-export-format="xlsx"><strong>Excel XLSX</strong><span data-i18n="analyzer.xlsxDescription">保留数值单元格</span></button></div></div></div>
+          <div class="table-wrap"><table id="result-table"><thead><tr id="result-head"></tr></thead><tbody id="result-tbody"></tbody></table><div class="table-empty" id="table-empty" data-i18n="analyzer.noResults">尚无计算结果</div></div>
         </section>
 
-        <footer class="status-bar"><span id="status-bar" data-i18n="analyzer.statusReady">系统就绪：支持不同起始时间，并区分实测范围与模型外推。</span><span class="model-version">ISPD Core · v1</span></footer>
+        <footer class="status-bar"><span id="status-bar" data-i18n="analyzer.statusReady">系统就绪：支持不同起始时间，并区分实测范围与模型外推。</span><span class="model-version">ISPD Core · v2</span></footer>
       </main>
     </div>
   </div>

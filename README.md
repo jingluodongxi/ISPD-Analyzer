@@ -5,7 +5,7 @@ ISPD-Analyzer is a bilingual, browser-based platform for isothermal surface-pote
 ## Design principles
 
 - All measurement data stays in the browser; there is no upload or backend.
-- The numerical core is copied unchanged from `ISPD-web` and isolated under `assets/js/core/`.
+- The original double-exponential numerical interface remains compatible and is isolated under `assets/js/core/`; a parallel single-exponential path is available for one-process fitting.
 - The landing page and analysis workspace use relative paths so the site works under the GitHub Pages project path.
 - The analysis workspace targets desktop screens of at least 1024 px.
 
@@ -19,11 +19,10 @@ Serve this directory with any static HTTP server and open the root URL. Opening 
 
 ## Regression test
 
-Run `node tests/regression.test.js`. The test verifies a fixed double-exponential dataset, expected inversion outputs, peak classifications, and invalid-series handling.
+Run `node tests/regression.test.js` and `node tests/site.test.js`. The tests verify fixed single- and double-exponential datasets, expected inversion outputs, peak classifications, invalid-series handling, bilingual interface coverage, and static asset integrity.
 
 ## GitHub Pages
 
 Publish from the `main` branch and repository root. The intended public path is:
 
 `https://jingluodongxi.github.io/ISPD-Analyzer/`
-

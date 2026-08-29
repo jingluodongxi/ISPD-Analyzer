@@ -46,7 +46,7 @@
       <div class="hero-copy">
         <p class="eyebrow" data-i18n="home.eyebrow">电介质极化特征评估</p>
         <h1 data-i18n-html="home.title">从表面电位衰减<br>解析电荷陷阱特征</h1>
-        <p class="hero-lede" data-i18n="home.lede">面向等温表面电位衰减数据的浏览器端研究工具，集成双指数拟合、解析求导与表面陷阱能谱反演。</p>
+        <p class="hero-lede" data-i18n="home.lede">面向等温表面电位衰减数据的浏览器端研究工具，集成单/双指数拟合、解析求导与表面陷阱能谱反演。</p>
         <div class="hero-actions">
           <a class="button button-primary" href="analyzer/">
             <span data-i18n="home.start">开始分析</span>
@@ -92,7 +92,7 @@
           <g class="chart-labels"><text x="72" y="310">10⁰</text><text x="280" y="310">10²</text><text x="488" y="310">10⁴</text><text x="10" y="88">V(t)</text></g>
         </svg>
         <div class="visual-stats">
-          <div><span data-i18n="home.statModel">拟合模型</span><strong>Double exponential</strong></div>
+          <div><span data-i18n="home.statModel">拟合模型</span><strong>Single · Double exponential</strong></div>
           <div><span data-i18n="home.statOutput">核心输出</span><strong>R² · E<sub>t</sub> · N<sub>t</sub></strong></div>
           <div><span data-i18n="home.statFormat">数据格式</span><strong>CSV · Excel</strong></div>
         </div>
@@ -109,20 +109,20 @@
         <article class="capability-card">
           <span class="card-index">01</span>
           <div class="card-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM8 15l2-3 2 2 4-5"/></svg></div>
-          <h3 data-i18n="home.cap1Title">多曲线数据处理</h3>
-          <p data-i18n="home.cap1Body">读取 CSV 或 Excel 时间—电位数据，支持单曲线分析与多组样品对比。</p>
+          <h3 data-i18n="home.cap1Title">测量数据集处理</h3>
+          <p data-i18n="home.cap1Body">读取一个或多个 CSV、XLSX 或 XLS 时间—电位数据文件，并支持按需勾选对比。</p>
         </article>
         <article class="capability-card">
           <span class="card-index">02</span>
           <div class="card-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17c3-8 5-9 8-4s5 4 8-6M4 20h16"/></svg></div>
           <h3 data-i18n="home.cap2Title">解析物理反演</h3>
-          <p data-i18n="home.cap2Body">通过双指数拟合与连续函数解析求导，计算浅、深陷阱能级及面密度。</p>
+          <p data-i18n="home.cap2Body">自主选择单指数或双指数拟合，通过连续函数解析求导计算表观陷阱特征。</p>
         </article>
         <article class="capability-card">
           <span class="card-index">03</span>
           <div class="card-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14"/></svg></div>
           <h3 data-i18n="home.cap3Title">科研结果导出</h3>
-          <p data-i18n="home.cap3Body">导出 PNG、SVG、PDF 图形及 CSV 参数表，保留实测区间与外推区间标识。</p>
+          <p data-i18n="home.cap3Body">导出 PNG、SVG、PDF 图形及 CSV、XLSX 参数表，保留实测区间与外推区间标识。</p>
         </article>
       </div>
     </section>
@@ -135,7 +135,7 @@
           <p data-i18n="home.methodBody">系统将测量时间范围与模型外推范围明确分离，并在拟合参数触及边界时给出解释提示。</p>
           <div class="formula-card">
             <span data-i18n="home.formulaLabel">衰减模型</span>
-            <strong>V(t) = A₁e<sup>−t/τ₁</sup> + A₂e<sup>−t/τ₂</sup> + y₀</strong>
+            <strong>V(t) = Ae<sup>−t/τ</sup> + y₀<br>V(t) = A₁e<sup>−t/τ₁</sup> + A₂e<sup>−t/τ₂</sup> + y₀</strong>
           </div>
         </div>
         <ol class="method-steps">

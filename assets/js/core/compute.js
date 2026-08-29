@@ -128,6 +128,7 @@ function compute(t, v, T, nu, eps_r, d_um) {
   }
 
   return {
+    model: "double",
     r2: safeFinite(fit.r2, 0),
     v0: safeFinite(v[0], 0),
     A1: safeFinite(A1, 0),
@@ -149,6 +150,10 @@ function compute(t, v, T, nu, eps_r, d_um) {
     deep_peak_region: deepRegion,
     deep_boundary_warning: deepBoundaryWarning,
     deep_extrapolated: deepRegion !== "measured",
+    peaks: [
+      { kind: "shallow", E: safeFinite(shallowE, null), N: safeFinite(shallowN, null), region: shallowRegion, boundaryWarning: shallowBoundaryWarning },
+      { kind: "deep", E: safeFinite(deepE, null), N: safeFinite(deepN, null), region: deepRegion, boundaryWarning: deepBoundaryWarning }
+    ],
     EMeasured: measuredTrap.E,
     NMeasured: measuredTrap.N,
     EPreExtrapolated: preExtrapolatedTrap.E,
@@ -159,6 +164,106 @@ function compute(t, v, T, nu, eps_r, d_um) {
     EExtrapolated: preExtrapolatedTrap.E,
     NExtrapolated: preExtrapolatedTrap.N,
     // Retained for compatibility with existing consumers and exports.
+    E_t: combinedE,
+    N_t: combinedN,
+    tDense: tMeasured,
+    vDense: vMeasured,
+    tLog: t.map(function(x) { return Math.log10(x); }),
+    vRaw: v,
+    tLogDense: tMeasured.map(function(x) { return Math.log10(x); }),
+    maxNt: safeFinite(maxNt, 0)
+  };
+}
+
+function computeSingle(t, v, T, nu, eps_r, d_um) {
+  assertValidSeries(t, v);
+
+  T = T || 300;
+  nu = nu || 1e12;
+  eps_r = eps_r || 3.0;
+  d_um = d_um || 50;
+
+  var tFirst = t[0];
+  var tLast = t[t.length - 1];
+  var vDrop = v[0] - v[v.length - 1];
+  var tRange = tLast - tFirst;
+  var fit = LM.fitSingleExponential(t, v, vDrop, tRange);
+  if (!fit.success) throw new Error("单指数拟合未能收敛。");
+
+  var A = fit.A;
+  var tau = fit.tau;
+  var y0 = fit.y0;
+  var displayStart = Math.max(MIN_DISPLAY_SECONDS, Math.min(
+    EXTRAPOLATION_START_SECONDS, tau / PRE_PEAK_TIME_FACTOR
+  ));
+  var displayEnd = Math.max(tLast, POST_PEAK_TIME_FACTOR * tau);
+  var tMeasured = logspace(tFirst, tLast, 1000);
+  var vMeasured = tMeasured.map(function(time) {
+    return singleVoltageAt(time, A, tau, y0);
+  });
+
+  var d_m = d_um * 1e-6;
+  var densityConstant = (EPS_0 * eps_r) / (E_CHARGE * d_m);
+  var tPreExtrapolated = displayStart < tFirst ? logspace(displayStart, tFirst, 320) : [];
+  var tPostExtrapolated = displayEnd > tLast ? logspace(tLast, displayEnd, 320) : [];
+  var measuredTrap = singleTrapSeries(tMeasured, T, nu, densityConstant, A, tau);
+  var preExtrapolatedTrap = singleTrapSeries(tPreExtrapolated, T, nu, densityConstant, A, tau);
+  var postExtrapolatedTrap = singleTrapSeries(tPostExtrapolated, T, nu, densityConstant, A, tau);
+
+  var characteristicE = energyAt(tau, T, nu);
+  var characteristicN = singleDensityAt(tau, densityConstant, A, tau);
+  var characteristicRegion = peakRegion(tau, tFirst, tLast);
+  var vEnd = v[v.length - 1];
+  var vMax = Math.max.apply(null, v);
+  var tauMin = 1;
+  var tauMax = 20 * (tLast - tFirst);
+  var amplitudeMax = 5 * Math.max(vMax - vEnd, v[0], 0.01);
+  var y0Min = vEnd * 0.5;
+  var y0Max = vEnd + (vMax - vEnd) * 2;
+  var characteristicBoundaryWarning =
+    nearBound(A, 0, amplitudeMax) ||
+    nearBound(tau, tauMin, tauMax) ||
+    nearBound(y0, y0Min, y0Max);
+
+  var combinedE = preExtrapolatedTrap.E.concat(measuredTrap.E, postExtrapolatedTrap.E);
+  var combinedN = preExtrapolatedTrap.N.concat(measuredTrap.N, postExtrapolatedTrap.N);
+  var maxNt = Math.max.apply(null, combinedN.concat([characteristicN]));
+
+  function safeFinite(x, fallback) {
+    return isFinite(x) && x !== null ? x : fallback;
+  }
+
+  return {
+    model: "single",
+    r2: safeFinite(fit.r2, 0),
+    v0: safeFinite(v[0], 0),
+    A: safeFinite(A, 0),
+    tau: safeFinite(tau, 1),
+    y0: safeFinite(y0, 0),
+    tFirst: tFirst,
+    tLast: tLast,
+    displayStart: displayStart,
+    displayEnd: displayEnd,
+    characteristic_E: safeFinite(characteristicE, null),
+    characteristic_N: safeFinite(characteristicN, null),
+    characteristic_peak_region: characteristicRegion,
+    characteristic_boundary_warning: characteristicBoundaryWarning,
+    characteristic_extrapolated: characteristicRegion !== "measured",
+    peaks: [{
+      kind: "characteristic",
+      E: safeFinite(characteristicE, null),
+      N: safeFinite(characteristicN, null),
+      region: characteristicRegion,
+      boundaryWarning: characteristicBoundaryWarning
+    }],
+    EMeasured: measuredTrap.E,
+    NMeasured: measuredTrap.N,
+    EPreExtrapolated: preExtrapolatedTrap.E,
+    NPreExtrapolated: preExtrapolatedTrap.N,
+    EPostExtrapolated: postExtrapolatedTrap.E,
+    NPostExtrapolated: postExtrapolatedTrap.N,
+    EExtrapolated: preExtrapolatedTrap.E,
+    NExtrapolated: preExtrapolatedTrap.N,
     E_t: combinedE,
     N_t: combinedN,
     tDense: tMeasured,
@@ -186,6 +291,10 @@ function voltageAt(t, A1, tau1, A2, tau2, y0) {
   return A1 * Math.exp(-t / tau1) + A2 * Math.exp(-t / tau2) + y0;
 }
 
+function singleVoltageAt(t, A, tau, y0) {
+  return A * Math.exp(-t / tau) + y0;
+}
+
 function energyAt(t, T, nu) {
   return K_B * T * Math.log(nu * t);
 }
@@ -205,10 +314,22 @@ function trapSeries(times, T, nu, densityConstant, A1, tau1, A2, tau2) {
   };
 }
 
+function singleDensityAt(t, densityConstant, A, tau) {
+  var dV = -(A / tau) * Math.exp(-t / tau);
+  return densityConstant * Math.abs(t * dV);
+}
+
+function singleTrapSeries(times, T, nu, densityConstant, A, tau) {
+  return {
+    E: times.map(function(t) { return energyAt(t, T, nu); }),
+    N: times.map(function(t) { return singleDensityAt(t, densityConstant, A, tau); })
+  };
+}
+
 return {
   compute: compute,
+  computeSingle: computeSingle,
   EXTRAPOLATION_START_SECONDS: EXTRAPOLATION_START_SECONDS,
   MIN_DISPLAY_SECONDS: MIN_DISPLAY_SECONDS
 };
 })();
-

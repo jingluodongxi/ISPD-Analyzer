@@ -58,6 +58,14 @@ var ChartRenderer = (function() {
     return points;
   }
 
+  function datasetPeaks(dataset) {
+    if (Array.isArray(dataset.peaks)) return dataset.peaks;
+    return [
+      { E: dataset.shallow_E, N: dataset.shallow_N },
+      { E: dataset.deep_E, N: dataset.deep_N }
+    ];
+  }
+
   function baseScene(width, height, margin, title) {
     return {
       width: width,
@@ -216,13 +224,13 @@ var ChartRenderer = (function() {
         .concat(dataset.EMeasured || dataset.E_t || [], dataset.EPostExtrapolated || []);
       var allN = (dataset.NPreExtrapolated || dataset.NExtrapolated || [])
         .concat(dataset.NMeasured || dataset.N_t || [], dataset.NPostExtrapolated || []);
-      allE.concat([dataset.shallow_E, dataset.deep_E]).forEach(function(value) {
+      allE.concat(datasetPeaks(dataset).map(function(peak) { return peak.E; })).forEach(function(value) {
         if (isFinite(value) && value >= 0) {
           xMin = Math.min(xMin, value);
           xMax = Math.max(xMax, value);
         }
       });
-      allN.concat([dataset.shallow_N, dataset.deep_N]).forEach(function(value) {
+      allN.concat(datasetPeaks(dataset).map(function(peak) { return peak.N; })).forEach(function(value) {
         if (isFinite(value) && value >= 0) {
           yMin = Math.min(yMin, value);
           yMax = Math.max(yMax, value);
@@ -273,16 +281,13 @@ var ChartRenderer = (function() {
       addCurve(dataset.EMeasured || dataset.E_t || [], dataset.NMeasured || dataset.N_t || [], color, false);
       addCurve(dataset.EPostExtrapolated || [], dataset.NPostExtrapolated || [], color, true);
 
-      if (isFinite(dataset.shallow_E) && isFinite(dataset.shallow_N)) {
-        scene.items.push(polygon(starPoints(
-          toX(dataset.shallow_E), toY(dataset.shallow_N), 12 * scale, 5 * scale
-        ), { fill: color, stroke: "#FFFFFF", strokeWidth: 1.5 * scale, clip: true }));
-      }
-      if (isFinite(dataset.deep_E) && isFinite(dataset.deep_N)) {
-        scene.items.push(polygon(starPoints(
-          toX(dataset.deep_E), toY(dataset.deep_N), 12 * scale, 5 * scale
-        ), { fill: color, stroke: "#FFFFFF", strokeWidth: 1.5 * scale, clip: true }));
-      }
+      datasetPeaks(dataset).forEach(function(peak) {
+        if (isFinite(peak.E) && isFinite(peak.N)) {
+          scene.items.push(polygon(starPoints(
+            toX(peak.E), toY(peak.N), 12 * scale, 5 * scale
+          ), { fill: color, stroke: "#FFFFFF", strokeWidth: 1.5 * scale, clip: true }));
+        }
+      });
     });
 
     var textColor = "#333333";

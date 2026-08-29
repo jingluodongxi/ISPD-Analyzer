@@ -33,6 +33,20 @@ close(result.deep_N, 292782948586410.25, 1e-10, "deep_N");
 assert(result.shallow_peak_region === "measured", "shallow peak must remain in the measured region");
 assert(result.deep_peak_region === "measured", "deep peak must remain in the measured region");
 assert(result.shallow_boundary_warning === false && result.deep_boundary_warning === false, "unexpected boundary warning");
+assert(result.model === "double" && result.peaks.length === 2, "double model metadata is invalid");
+
+const singleTimes = [1, 2, 5, 10, 20, 40, 60, 90, 150, 300, 600, 1200, 2400];
+const singleVoltages = singleTimes.map((time) => 700 * Math.exp(-time / 180) + 28);
+const singleResult = ISPD.computeSingle(singleTimes, singleVoltages, 300, 1e12, 3, 50);
+close(singleResult.r2, 1, 1e-12, "single R²");
+close(singleResult.A, 700, 1e-9, "single A");
+close(singleResult.tau, 180, 1e-9, "single tau");
+close(singleResult.y0, 28, 1e-9, "single y0");
+close(singleResult.characteristic_E, 0.8485326544202317, 1e-10, "characteristic_E");
+close(singleResult.characteristic_N, 853948764229350.1, 1e-10, "characteristic_N");
+assert(singleResult.model === "single" && singleResult.peaks.length === 1, "single model metadata is invalid");
+assert(singleResult.characteristic_peak_region === "measured", "characteristic peak must remain in the measured region");
+assert(singleResult.characteristic_boundary_warning === false, "unexpected single-model boundary warning");
 
 const vtSvg = ChartRenderer.exportVtSvg([{
   tLog: result.tLog, vRaw: result.vRaw, tLogDense: result.tLogDense, vDense: result.vDense, label: "regression"
@@ -46,6 +60,13 @@ const spectrumSvg = ChartRenderer.exportEtNtSvg([{
 }], ["#168f88"], { width: 1200, height: 800 });
 assert(vtSvg.startsWith("<?xml") && vtSvg.includes("表面电位等温衰减动力学分析"), "V-t SVG export is invalid");
 assert(spectrumSvg.startsWith("<?xml") && spectrumSvg.includes("Surface Trap Density"), "trap-spectrum SVG export is invalid");
+const singleSpectrumSvg = ChartRenderer.exportEtNtSvg([{
+  EMeasured: singleResult.EMeasured, NMeasured: singleResult.NMeasured,
+  EPreExtrapolated: singleResult.EPreExtrapolated, NPreExtrapolated: singleResult.NPreExtrapolated,
+  EPostExtrapolated: singleResult.EPostExtrapolated, NPostExtrapolated: singleResult.NPostExtrapolated,
+  peaks: singleResult.peaks, label: "single regression"
+}], ["#168f88"], { width: 1200, height: 800 });
+assert(singleSpectrumSvg.startsWith("<?xml") && singleSpectrumSvg.includes("Surface Trap Density"), "single trap-spectrum SVG export is invalid");
 
 [
   { t: [0, 1, 2], v: [3, 2, 1], name: "non-positive time" },
@@ -56,6 +77,9 @@ assert(spectrumSvg.startsWith("<?xml") && spectrumSvg.includes("Surface Trap Den
   let failed = false;
   try { ISPD.compute(fixture.t, fixture.v, 300, 1e12, 3, 50); } catch (_) { failed = true; }
   assert(failed, `${fixture.name} should be rejected`);
+  failed = false;
+  try { ISPD.computeSingle(fixture.t, fixture.v, 300, 1e12, 3, 50); } catch (_) { failed = true; }
+  assert(failed, `${fixture.name} should be rejected by the single model`);
 });
 
 console.log("ISPD numerical regression: PASS");

@@ -33,11 +33,19 @@ vm.createContext(context);
 vm.runInContext(fs.readFileSync(path.join(root, "assets", "js", "i18n.js"), "utf8"), context);
 
 const pageHtml = htmlFiles.slice(0, 2).map((relative) => fs.readFileSync(path.join(root, relative), "utf8")).join("\n");
-const keys = [...pageHtml.matchAll(/data-i18n(?:-html)?="([^"]+)"/g)].map((match) => match[1]);
+const analyzerJs = fs.readFileSync(path.join(root, "assets", "js", "analyzer.js"), "utf8");
+const keys = [...pageHtml.matchAll(/data-i18n(?:-html)?="([^"]+)"/g)].map((match) => match[1])
+  .concat([...analyzerJs.matchAll(/\bt\("([^"]+)"/g)].map((match) => match[1]));
 ["zh", "en"].forEach((language) => {
   context.window.ISPD_I18N.setLanguage(language);
   keys.forEach((key) => assert(context.window.ISPD_I18N.t(key) !== "undefined", `Missing ${language} translation: ${key}`));
 });
 
 assert(!pageHtml.includes("jingluodongxi.github.io/ISPD-web"), "The new site must not link to the legacy deployment");
+const analyzerHtml = fs.readFileSync(path.join(root, "analyzer", "index.html"), "utf8");
+assert(!analyzerHtml.includes('name="mode"'), "Legacy single/multi data-mode controls must be removed");
+assert(analyzerHtml.includes('name="fit-model"') && analyzerHtml.includes('value="single"') && analyzerHtml.includes('value="double"'), "Both fit models must be selectable");
+assert(analyzerHtml.includes('id="btn-clear-files"') && analyzerHtml.includes('class="remove-file"') === false, "Dataset clear control is missing");
+assert(analyzerHtml.includes('data-export-format="csv"') && analyzerHtml.includes('data-export-format="xlsx"'), "CSV/XLSX export choices are missing");
+assert(analyzerHtml.includes('id="result-head"'), "Dynamic result header is missing");
 console.log(`Static site integrity: PASS (${new Set(keys).size} translated interface strings)`);
