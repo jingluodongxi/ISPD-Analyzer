@@ -35,6 +35,20 @@
     return warning ? label + "; " + t("analyzer.boundary") : label;
   }
 
+  function legendName(filename) {
+    var dataset = datasets[filename];
+    return dataset && dataset.legendName.trim() ? dataset.legendName : filename;
+  }
+  function updateLegendName(filename, value) {
+    if (!datasets[filename]) return;
+    datasets[filename].legendName = value;
+    [vtSets, trapSets].forEach(function (sets) {
+      sets.forEach(function (set) { if (set.filename === filename) set.label = legendName(filename); });
+    });
+    // Renaming is presentation-only: retain the fit, points, parameters and colors.
+    drawCharts();
+  }
+
   function addFileItem(filename, dataset) {
     var item = document.createElement("li");
     item.dataset.filename = filename;
@@ -44,15 +58,33 @@
     var content = document.createElement("span"); content.className = "file-content";
     var name = document.createElement("span"); name.className = "file-name"; name.textContent = filename; name.title = filename;
     var meta = document.createElement("small"); meta.className = "file-meta"; meta.dataset.count = dataset.t.length; meta.dataset.first = dataset.t[0];
+    var editor = document.createElement("div"); editor.className = "legend-editor";
+    var label = document.createElement("label"); label.className = "legend-field";
+    var labelText = document.createElement("span"); labelText.className = "legend-name-label";
+    var input = document.createElement("input"); input.type = "text"; input.className = "legend-name";
+    input.dataset.filename = filename; input.value = dataset.legendName; input.autocomplete = "off"; input.spellcheck = false;
+    var reset = document.createElement("button"); reset.type = "button"; reset.className = "legend-reset"; reset.dataset.filename = filename;
+    reset.innerHTML = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7a6 6 0 1 1-1 5M5 3v4h4"/></svg>';
+    label.appendChild(labelText); label.appendChild(input); editor.appendChild(label); editor.appendChild(reset);
     var remove = document.createElement("button"); remove.className = "remove-file"; remove.type = "button"; remove.dataset.filename = filename;
     remove.innerHTML = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M8 3h4l1 3H7l1-3Zm-2 3 1 11h6l1-11M9 9v5m2-5v5"/></svg>';
-    content.appendChild(name); content.appendChild(meta);
+    content.appendChild(name); content.appendChild(meta); content.appendChild(editor);
     item.appendChild(checkbox); item.appendChild(dot); item.appendChild(content); item.appendChild(remove);
     document.getElementById("file-list").appendChild(item);
     updateFileLabels(); updateFileEmpty();
   }
   function updateFileLabels() {
     document.querySelectorAll(".file-meta").forEach(function (meta) { meta.textContent = t("analyzer.fileMeta", { count: meta.dataset.count, first: meta.dataset.first }); });
+    document.querySelectorAll(".legend-name-label").forEach(function (label) { label.textContent = t("analyzer.legendName"); });
+    document.querySelectorAll(".legend-name").forEach(function (input) {
+      input.placeholder = t("analyzer.legendPlaceholder");
+      input.title = t("analyzer.legendHelp");
+      input.setAttribute("aria-label", t("analyzer.legendName") + ": " + input.dataset.filename);
+    });
+    document.querySelectorAll(".legend-reset").forEach(function (button) {
+      button.title = t("analyzer.resetLegend");
+      button.setAttribute("aria-label", t("analyzer.resetLegend") + ": " + button.dataset.filename);
+    });
     document.querySelectorAll(".remove-file").forEach(function (button) {
       button.setAttribute("aria-label", t("analyzer.removeFile") + ": " + button.dataset.filename);
       button.title = t("analyzer.removeFile");
@@ -167,7 +199,7 @@
       reader.onload = function (event) {
         try {
           var parsed = parseWorkbook(event.target.result), color = COLORS[colorIndex++ % COLORS.length];
-          datasets[file.name] = { t: parsed.t, v: parsed.v, color: color }; addFileItem(file.name, datasets[file.name]); clearResults(false);
+          datasets[file.name] = { t: parsed.t, v: parsed.v, color: color, legendName: file.name }; addFileItem(file.name, datasets[file.name]); clearResults(false);
           showStatus("analyzer.fileLoaded", { name: file.name, count: parsed.t.length, first: parsed.t[0] }, "ready");
         } catch (error) { showStatus("analyzer.fileFailed", { name: file.name, message: error.message }, "error"); }
       };
@@ -188,8 +220,8 @@
           var source = datasets[filename]; if (!source) return;
           var result = currentModel === "single" ? ISPD.computeSingle(source.t, source.v, T, nu, eps, d) : ISPD.compute(source.t, source.v, T, nu, eps, d);
           result.filename = filename; result.color = source.color; result.model = currentModel; allResults.push(result); nextColors.push(source.color);
-          nextVt.push({ tLog: result.tLog, vRaw: result.vRaw, tLogDense: result.tLogDense, vDense: result.vDense, label: filename + " (R²=" + result.r2.toFixed(4) + ")" });
-          nextTrap.push({ EMeasured: result.EMeasured, NMeasured: result.NMeasured, EPreExtrapolated: result.EPreExtrapolated, NPreExtrapolated: result.NPreExtrapolated, EPostExtrapolated: result.EPostExtrapolated, NPostExtrapolated: result.NPostExtrapolated, peaks: result.peaks, label: filename });
+          nextVt.push({ filename: filename, tLog: result.tLog, vRaw: result.vRaw, tLogDense: result.tLogDense, vDense: result.vDense, label: legendName(filename) });
+          nextTrap.push({ filename: filename, EMeasured: result.EMeasured, NMeasured: result.NMeasured, EPreExtrapolated: result.EPreExtrapolated, NPreExtrapolated: result.NPreExtrapolated, EPostExtrapolated: result.EPostExtrapolated, NPostExtrapolated: result.NPostExtrapolated, peaks: result.peaks, label: legendName(filename) });
         });
         vtSets = nextVt; trapSets = nextTrap; chartColors = nextColors; setEmptyState(true); renderTable(); switchTab(1); window.setTimeout(drawCharts, 0);
         showStatus("analyzer.success", { count: selected.length, modelKey: currentModel }, "completed");
@@ -243,7 +275,21 @@
     ["dragleave", "drop"].forEach(function (name) { upload.addEventListener(name, function (event) { event.preventDefault(); upload.classList.remove("dragover"); }); });
     upload.addEventListener("drop", function (event) { importFiles(event.dataTransfer.files); });
     document.getElementById("btn-clear-files").addEventListener("click", function () { clearFiles(true); });
-    document.getElementById("file-list").addEventListener("click", function (event) { var button = event.target.closest(".remove-file"); if (!button) return; var name = button.dataset.filename; delete datasets[name]; button.closest("li").remove(); updateFileEmpty(); clearResults(false); showStatus("analyzer.fileRemoved", { name: name }, "ready"); });
+    document.getElementById("file-list").addEventListener("click", function (event) {
+      var reset = event.target.closest(".legend-reset");
+      if (reset) {
+        var filename = reset.dataset.filename, input = reset.closest("li").querySelector(".legend-name");
+        input.value = filename; updateLegendName(filename, filename); input.focus(); return;
+      }
+      var button = event.target.closest(".remove-file"); if (!button) return;
+      var name = button.dataset.filename; delete datasets[name]; button.closest("li").remove(); updateFileEmpty(); clearResults(false); showStatus("analyzer.fileRemoved", { name: name }, "ready");
+    });
+    document.getElementById("file-list").addEventListener("input", function (event) {
+      if (event.target.matches(".legend-name") && !event.isComposing) updateLegendName(event.target.dataset.filename, event.target.value);
+    });
+    document.getElementById("file-list").addEventListener("compositionend", function (event) {
+      if (event.target.matches(".legend-name")) updateLegendName(event.target.dataset.filename, event.target.value);
+    });
     document.getElementById("file-list").addEventListener("change", function (event) { if (event.target.matches("input[type='checkbox']") && allResults.length) { clearResults(false); showStatus("analyzer.selectionChanged", {}, "ready"); } });
     document.querySelectorAll('input[name="fit-model"]').forEach(function (radio) { radio.addEventListener("change", function () { if (!this.checked) return; currentModel = this.value; clearResults(false); updateModelUi(); showStatus("analyzer.modelChanged", { modelKey: currentModel }, "ready"); }); });
     document.getElementById("btn-compute").addEventListener("click", runAnalysis);

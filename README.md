@@ -15,11 +15,21 @@ Import `.csv`, `.xlsx`, or `.xls` files with time in the first column and potent
 
 ## Local preview
 
+### Editable chart legends
+
+Each imported CSV, XLSX, or XLS file has a **Legend name** text field. Enter any name (including Chinese, English, units, and symbols) before or after analysis. Both charts and their PNG/SVG/PDF exports use exactly that name, without adding a filename extension or R² suffix. R² remains available in the parameter table.
+
+The original filename remains visible and is retained in table exports for traceability. A blank/whitespace-only name falls back to the original filename; the reset button restores it explicitly. Editing a name only redraws labels: measurements, curve geometry, fitted parameters, and colors are retained. Names persist while switching fit models and interface languages in the current page, but are cleared with their datasets.
+
+### Serving the site
+
 Serve this directory with any static HTTP server and open the root URL. Opening the HTML files directly is not recommended because browser download and print behavior varies for `file:` URLs.
 
 ## Regression test
 
 Run `node tests/regression.test.js` and `node tests/site.test.js`. The tests verify fixed single- and double-exponential datasets, expected inversion outputs, peak classifications, invalid-series handling, bilingual interface coverage, and static asset integrity.
+
+Optional UI regression: with Playwright available, run `node tests/legend.browser.test.js`. It uses installed Chrome by default; set `ISPD_BROWSER_PATH` to another Chromium executable if needed. It checks CSV/XLSX/XLS naming, unchanged fit results and vector geometry, PNG/SVG/PDF exports, reset/fallback, and language/model switches. Set `ISPD_QA_DIR` to save a screenshot. All test datasets are synthetic.
 
 ## GitHub Pages
 

@@ -37,6 +37,24 @@ var ChartRenderer = (function() {
     return Object.assign({ type: "text", text: text, x: x, y: y }, style || {});
   }
 
+  function addLegend(scene, datasets, colors, scale, x) {
+    var y = scene.margin.top + 5 * scale, fontSize = 13 * scale;
+    var available = Math.min(248 * scale, scene.width - scene.margin.right - x - 24 * scale);
+    // A conservative full-character width works for both CJK and Latin names.
+    // Wrap text only; the plot bounds, paths and data coordinates are unchanged.
+    var perLine = Math.max(1, Math.floor(available / fontSize));
+    (datasets || []).forEach(function (dataset, index) {
+      var characters = Array.from(dataset.label || ("数据" + (index + 1)));
+      scene.items.push(rect(x, y, 16 * scale, 16 * scale, { fill: colors[index % colors.length] }));
+      for (var start = 0; start < characters.length; start += perLine) {
+        scene.items.push(textItem(characters.slice(start, start + perLine).join(""), x + 22 * scale,
+          y + 13 * scale + (start / perLine) * 18 * scale,
+          { fill: "#333333", anchor: "start", fontSize: fontSize }));
+      }
+      y += 24 * scale + Math.max(0, Math.ceil(characters.length / perLine) - 1) * 18 * scale;
+    });
+  }
+
   function validPoints(xs, ys, toX, toY) {
     var points = [];
     var length = Math.min((xs || []).length, (ys || []).length);
@@ -193,18 +211,7 @@ var ChartRenderer = (function() {
       fill: "#1a1a2e", anchor: "middle", fontSize: 18 * scale, fontWeight: "bold"
     }));
 
-    var legendY = margin.top + 5 * scale;
-    (datasets || []).forEach(function(dataset, datasetIndex) {
-      var color = colors[datasetIndex % colors.length];
-      scene.items.push(rect(margin.left + scene.plotWidth - 280 * scale, legendY, 16 * scale, 16 * scale, {
-        fill: color
-      }));
-      scene.items.push(textItem(dataset.label || ("数据" + (datasetIndex + 1)),
-        margin.left + scene.plotWidth - 258 * scale, legendY + 13 * scale, {
-          fill: textColor, anchor: "start", fontSize: 13 * scale
-        }));
-      legendY += 24 * scale;
-    });
+    addLegend(scene, datasets, colors, scale, margin.left + scene.plotWidth - 280 * scale);
     return scene;
   }
 
@@ -320,16 +327,7 @@ var ChartRenderer = (function() {
       fill: "#1a1a2e", anchor: "middle", fontSize: 18 * scale, fontWeight: "bold"
     }));
 
-    var legendY = margin.top + 5 * scale;
-    (datasets || []).forEach(function(dataset, datasetIndex) {
-      var color = colors[datasetIndex % colors.length];
-      scene.items.push(rect(margin.left + 10 * scale, legendY, 16 * scale, 16 * scale, { fill: color }));
-      scene.items.push(textItem(dataset.label || ("数据" + (datasetIndex + 1)),
-        margin.left + 32 * scale, legendY + 13 * scale, {
-          fill: textColor, anchor: "start", fontSize: 13 * scale
-        }));
-      legendY += 24 * scale;
-    });
+    addLegend(scene, datasets, colors, scale, margin.left + 10 * scale);
     return scene;
   }
 
