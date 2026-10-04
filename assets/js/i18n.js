@@ -3,6 +3,13 @@
 
   var messages = {
     zh: {
+      chart: {
+        vtTitle: "表面电位等温衰减动力学分析", spectrumTitle: "聚合物面陷阱能级分布",
+        timeAxis: "对数时间 log₁₀(t)", potentialAxis: "表面电位 V (V)",
+        energyAxis: "陷阱能级深度 Eₜ (eV)", densityAxis: "面陷阱密度 Nₜ (eV⁻¹·m⁻²)",
+        spectrumNote: "实线：测量时间范围内拟合；虚线：范围外模型外推，不代表实测数据。",
+        dataset: "数据{index}"
+      },
       common: {
         skip: "跳至主要内容",
         desktopTitle: "建议使用电脑访问",
@@ -56,6 +63,13 @@
       }
     },
     en: {
+      chart: {
+        vtTitle: "Isothermal Surface Potential Decay", spectrumTitle: "Surface Trap Energy Distribution",
+        timeAxis: "Logarithmic time log₁₀(t)", potentialAxis: "Surface potential V (V)",
+        energyAxis: "Trap energy Eₜ (eV)", densityAxis: "Surface trap density Nₜ (eV⁻¹·m⁻²)",
+        spectrumNote: "Solid: fit within the measurement window; dashed: model extrapolation outside it, not measured data.",
+        dataset: "Dataset {index}"
+      },
       common: { skip: "Skip to main content", desktopTitle: "Desktop access recommended", desktopBody: "The analysis workspace is designed for desktop screens wider than 1024px." },
       home: {
         navCapabilities: "Capabilities", navMethod: "Method", openAnalyzer: "Open analyzer",
@@ -143,7 +157,7 @@
   });
 
   global.ISPD_I18N = {
-    t: function (path, values) { return format(resolve(path), values); },
+    t: function (path, values, lang) { return format(resolve(path, lang), values); },
     setLanguage: setLanguage,
     getLanguage: function () { return language; },
     subscribe: function (listener) { listeners.push(listener); }

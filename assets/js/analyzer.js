@@ -265,7 +265,10 @@
   function openPdf(kind) {
     if (!chartReady()) return; var vt = kind === "vt", title = vt ? "ISPD_Vt_Chart" : "ISPD_EtNt_Chart", svg = vt ? ChartRenderer.exportVtSvg(vtSets, chartColors) : ChartRenderer.exportEtNtSvg(trapSets, chartColors), popup = window.open("", "_blank");
     if (!popup) { showStatus("analyzer.popupBlocked", {}, "warning"); return; }
-    svg = svg.replace(/^<\?xml[^>]*>\s*/, ""); popup.document.open(); popup.document.write('<!doctype html><html><head><meta charset="UTF-8"><title>' + title + '</title><style>@page{size:180mm 120mm;margin:0}html,body{width:180mm;height:120mm;margin:0;background:#fff;overflow:hidden}body{display:flex;align-items:center;justify-content:center}svg{display:block;width:180mm;height:120mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body>' + svg + '</body></html>'); popup.document.close(); popup.focus(); window.setTimeout(function () { popup.print(); }, 350); showStatus("analyzer.printOpened", {}, "completed");
+    var svgRoot = new DOMParser().parseFromString(svg, "image/svg+xml").documentElement;
+    var printHeight = 180 * Number(svgRoot.getAttribute("height")) / Number(svgRoot.getAttribute("width"));
+    var paper = 'width:180mm;height:' + printHeight + 'mm;';
+    svg = svg.replace(/^<\?xml[^>]*>\s*/, ""); popup.document.open(); popup.document.write('<!doctype html><html><head><meta charset="UTF-8"><title>' + title + '</title><style>@page{size:180mm ' + printHeight + 'mm;margin:0}html,body{' + paper + 'margin:0;background:#fff}body{display:flex;align-items:center;justify-content:center}svg{display:block;' + paper + '}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body>' + svg + '</body></html>'); popup.document.close(); popup.focus(); window.setTimeout(function () { popup.print(); }, 350); showStatus("analyzer.printOpened", {}, "completed");
   }
 
   function bindEvents() {
@@ -308,6 +311,6 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     bindEvents(); updateFileEmpty(); updateModelUi(); setEmptyState(false); switchTab(0); showStatus("analyzer.statusReady", {}, "ready");
-    ISPD_I18N.subscribe(function () { updateModelUi(); updateFileLabels(); setResultHeading(); showStatus(currentStatus.key, currentStatus.values, currentStatus.type); });
+    ISPD_I18N.subscribe(function () { updateModelUi(); updateFileLabels(); setResultHeading(); showStatus(currentStatus.key, currentStatus.values, currentStatus.type); drawCharts(); });
   });
 })();

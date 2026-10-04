@@ -21,6 +21,10 @@ Each imported CSV, XLSX, or XLS file has a **Legend name** text field. Enter any
 
 The original filename remains visible and is retained in table exports for traceability. A blank/whitespace-only name falls back to the original filename; the reset button restores it explicitly. Editing a name only redraws labels: measurements, curve geometry, fitted parameters, and colors are retained. Names persist while switching fit models and interface languages in the current page, but are cleared with their datasets.
 
+Both charts reserve a right-hand legend column outside the axes. Names wrap using measured text widths; long legends extend the canvas and vector export height rather than being clipped. The workspace scrolls when needed, including on zoomed desktop screens. Changing the interface language immediately redraws chart titles, axes, and annotations while preserving custom names and all numerical results. SVG exports and the PDF print page use the same layout, with the print page sized to the complete SVG aspect ratio.
+
+Drawing methods accept an optional fourth argument `{language: "zh" | "en"}`; SVG export options accept the same `language` property alongside `width` and `height`. Omission uses the active interface language. The renderer uses the shared `ISPD_I18N` dictionary, which must be loaded before rendering. Requested height is a minimum and may expand for long legends.
+
 ### Serving the site
 
 Serve this directory with any static HTTP server and open the root URL. Opening the HTML files directly is not recommended because browser download and print behavior varies for `file:` URLs.
@@ -30,6 +34,8 @@ Serve this directory with any static HTTP server and open the root URL. Opening 
 Run `node tests/regression.test.js` and `node tests/site.test.js`. The tests verify fixed single- and double-exponential datasets, expected inversion outputs, peak classifications, invalid-series handling, bilingual interface coverage, and static asset integrity.
 
 Optional UI regression: with Playwright available, run `node tests/legend.browser.test.js`. It uses installed Chrome by default; set `ISPD_BROWSER_PATH` to another Chromium executable if needed. It checks CSV/XLSX/XLS naming, unchanged fit results and vector geometry, PNG/SVG/PDF exports, reset/fallback, and language/model switches. Set `ISPD_QA_DIR` to save a screenshot. All test datasets are synthetic.
+
+For local seven-workbook layout QA, set `ISPD_TEST_DATA_DIR` and run `node tests/chart-layout.browser.test.js`. This checks both languages, SVG text bounds, outside-axes legends, all export formats, long-name overflow, and CSS viewport/DPR equivalents of 100%, 125%, and 150% browser zoom at 1024/1440/1920 px. Optional QA outputs go only to `ISPD_QA_DIR`; measurement files are not committed or uploaded.
 
 ## GitHub Pages
 

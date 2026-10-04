@@ -3,6 +3,13 @@ const path = require("path");
 const vm = require("vm");
 
 const root = path.resolve(__dirname, "..");
+const languageContext = {
+  window: {}, localStorage: {getItem() {return null;}},
+  document: {addEventListener() {}}
+};
+vm.createContext(languageContext);
+vm.runInContext(fs.readFileSync(path.join(root, 'assets/js/i18n.js'), 'utf8'), languageContext);
+global.ISPD_I18N = languageContext.window.ISPD_I18N;
 ["lmfit.js", "peaks.js", "compute.js", "chart.js"].forEach((file) => {
   vm.runInThisContext(fs.readFileSync(path.join(root, "assets", "js", "core", file), "utf8"), { filename: file });
 });
@@ -59,14 +66,16 @@ const spectrumSvg = ChartRenderer.exportEtNtSvg([{
   deep_E: result.deep_E, deep_N: result.deep_N, label: "regression"
 }], ["#168f88"], { width: 1200, height: 800 });
 assert(vtSvg.startsWith("<?xml") && vtSvg.includes("表面电位等温衰减动力学分析"), "V-t SVG export is invalid");
-assert(spectrumSvg.startsWith("<?xml") && spectrumSvg.includes("Surface Trap Density"), "trap-spectrum SVG export is invalid");
+assert(spectrumSvg.startsWith("<?xml") && spectrumSvg.includes("聚合物面陷阱能级分布"), "trap-spectrum SVG export is invalid");
 const singleSpectrumSvg = ChartRenderer.exportEtNtSvg([{
   EMeasured: singleResult.EMeasured, NMeasured: singleResult.NMeasured,
   EPreExtrapolated: singleResult.EPreExtrapolated, NPreExtrapolated: singleResult.NPreExtrapolated,
   EPostExtrapolated: singleResult.EPostExtrapolated, NPostExtrapolated: singleResult.NPostExtrapolated,
   peaks: singleResult.peaks, label: "single regression"
 }], ["#168f88"], { width: 1200, height: 800 });
-assert(singleSpectrumSvg.startsWith("<?xml") && singleSpectrumSvg.includes("Surface Trap Density"), "single trap-spectrum SVG export is invalid");
+assert(singleSpectrumSvg.startsWith("<?xml") && singleSpectrumSvg.includes("聚合物面陷阱能级分布"), "single trap-spectrum SVG export is invalid");
+const englishSvg = ChartRenderer.exportVtSvg([], ['#168f88'], {language:'en'});
+assert(englishSvg.includes('Isothermal Surface Potential Decay') && !/[\u4e00-\u9fff]/.test(englishSvg), 'explicit English rendering failed');
 
 [
   { t: [0, 1, 2], v: [3, 2, 1], name: "non-positive time" },

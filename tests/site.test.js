@@ -35,7 +35,8 @@ vm.runInContext(fs.readFileSync(path.join(root, "assets", "js", "i18n.js"), "utf
 const pageHtml = htmlFiles.slice(0, 2).map((relative) => fs.readFileSync(path.join(root, relative), "utf8")).join("\n");
 const analyzerJs = fs.readFileSync(path.join(root, "assets", "js", "analyzer.js"), "utf8");
 const keys = [...pageHtml.matchAll(/data-i18n(?:-html)?="([^"]+)"/g)].map((match) => match[1])
-  .concat([...analyzerJs.matchAll(/\bt\("([^"]+)"/g)].map((match) => match[1]));
+  .concat([...analyzerJs.matchAll(/\bt\("([^"]+)"/g)].map((match) => match[1]))
+  .concat(['vtTitle','spectrumTitle','timeAxis','potentialAxis','energyAxis','densityAxis','spectrumNote','dataset'].map(key=>'chart.'+key));
 ["zh", "en"].forEach((language) => {
   context.window.ISPD_I18N.setLanguage(language);
   keys.forEach((key) => assert(context.window.ISPD_I18N.t(key) !== "undefined", `Missing ${language} translation: ${key}`));

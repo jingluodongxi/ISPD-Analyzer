@@ -37,21 +37,64 @@ var ChartRenderer = (function() {
     return Object.assign({ type: "text", text: text, x: x, y: y }, style || {});
   }
 
-  function addLegend(scene, datasets, colors, scale, x) {
-    var y = scene.margin.top + 5 * scale, fontSize = 13 * scale;
-    var available = Math.min(248 * scale, scene.width - scene.margin.right - x - 24 * scale);
-    // A conservative full-character width works for both CJK and Latin names.
-    // Wrap text only; the plot bounds, paths and data coordinates are unchanged.
-    var perLine = Math.max(1, Math.floor(available / fontSize));
-    (datasets || []).forEach(function (dataset, index) {
-      var characters = Array.from(dataset.label || ("数据" + (index + 1)));
+  var measureContext;
+  function wrapText(text, available, fontSize, bold) {
+    if (!measureContext && typeof document !== "undefined" && document.createElement) {
+      measureContext = document.createElement("canvas").getContext("2d");
+    }
+    if (measureContext) measureContext.font = (bold ? "bold " : "") + fontSize + "px " + FONT_FAMILY;
+    var lines = [], current = "";
+    Array.from(String(text)).forEach(function (character) {
+      var next = current + character;
+      var width = measureContext ? measureContext.measureText(next).width : Array.from(next).length * fontSize;
+      if (character === "\n") { lines.push(current); current = ""; }
+      else if (current && width > available) { lines.push(current); current = character; }
+      else current = next;
+    });
+    lines.push(current);
+    return lines;
+  }
+
+  function chartText(key, options, values) {
+    return ISPD_I18N.t("chart." + key, values, options && options.language);
+  }
+
+  function layoutScene(datasets, width, height, spectrum, options) {
+    // Scale is fixed from the requested size, not the expanded legend height.
+    var scale = scaleFor(width, height), right = width * 0.25;
+    var margin = { left: (spectrum ? 100 : 90) * scale, right: right, top: 55 * scale, bottom: 80 * scale };
+    var plotWidth = width - margin.left - right;
+    var title = chartText(spectrum ? "spectrumTitle" : "vtTitle", options);
+    var titles = wrapText(title, plotWidth, 18 * scale, true);
+    margin.top += (titles.length - 1) * 23 * scale;
+    var notes = spectrum ? wrapText(chartText("spectrumNote", options), plotWidth, 12 * scale) : [];
+    if (notes.length) margin.bottom = (90 + notes.length * 17) * scale;
+    var entries = (datasets || []).map(function (dataset, index) {
+      return wrapText(dataset.label || chartText("dataset", options, {index:index + 1}), right - 54 * scale, 13 * scale);
+    });
+    var legendHeight = entries.reduce(function (total, lines) { return total + (24 + (lines.length - 1) * 18) * scale; }, 10 * scale);
+    var actualHeight = Math.max(height, margin.top + margin.bottom + legendHeight);
+    var scene = baseScene(width, actualHeight, margin, title);
+    scene.scale = scale; scene.legendLines = entries; scene.titleLines = titles; scene.noteLines = notes;
+    return scene;
+  }
+
+  function addLegend(scene, datasets, colors, scale) {
+    var x = scene.margin.left + scene.plotWidth + 20 * scale, y = scene.margin.top + 5 * scale;
+    scene.legendLines.forEach(function (lines, index) {
       scene.items.push(rect(x, y, 16 * scale, 16 * scale, { fill: colors[index % colors.length] }));
-      for (var start = 0; start < characters.length; start += perLine) {
-        scene.items.push(textItem(characters.slice(start, start + perLine).join(""), x + 22 * scale,
-          y + 13 * scale + (start / perLine) * 18 * scale,
-          { fill: "#333333", anchor: "start", fontSize: fontSize }));
-      }
-      y += 24 * scale + Math.max(0, Math.ceil(characters.length / perLine) - 1) * 18 * scale;
+      lines.forEach(function (text, lineIndex) {
+        scene.items.push(textItem(text, x + 22 * scale, y + 13 * scale + lineIndex * 18 * scale,
+          { fill: "#333333", anchor: "start", fontSize: 13 * scale }));
+      });
+      y += (24 + (lines.length - 1) * 18) * scale;
+    });
+  }
+
+  function addTitle(scene) {
+    scene.titleLines.forEach(function (text, index) {
+      scene.items.push(textItem(text, scene.margin.left + scene.plotWidth / 2, (33 + index * 23) * scene.scale,
+        { fill: "#1a1a2e", anchor: "middle", fontSize: 18 * scene.scale, fontWeight: "bold" }));
     });
   }
 
@@ -123,15 +166,8 @@ var ChartRenderer = (function() {
     ], { fill: "none", stroke: "#333333", strokeWidth: 1.5 * scale }));
   }
 
-  function createVtScene(datasets, colors, width, height) {
-    var scale = scaleFor(width, height);
-    var margin = {
-      top: 55 * scale,
-      right: 50 * scale,
-      bottom: 80 * scale,
-      left: 90 * scale
-    };
-    var scene = baseScene(width, height, margin, "表面电位等温衰减动力学分析");
+  function createVtScene(datasets, colors, width, height, options) {
+    var scene = layoutScene(datasets, width, height, false, options), scale = scene.scale, margin = scene.margin;
     var xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
 
     (datasets || []).forEach(function(dataset) {
@@ -161,7 +197,7 @@ var ChartRenderer = (function() {
       return margin.top + scene.plotHeight - (value - yMin) / (yMax - yMin) * scene.plotHeight;
     }
 
-    scene.items.push(rect(0, 0, width, height, { fill: "#FFFFFF" }));
+    scene.items.push(rect(0, 0, width, scene.height, { fill: "#FFFFFF" }));
     addGridAndAxes(scene, xMin, xMax, yMin, yMax, toX, toY, scale);
 
     (datasets || []).forEach(function(dataset, datasetIndex) {
@@ -194,7 +230,7 @@ var ChartRenderer = (function() {
         fill: textColor, anchor: "middle", fontSize: 14 * scale, fontWeight: "bold"
       }));
     }
-    scene.items.push(textItem("对数时间 log₁₀(t)", margin.left + scene.plotWidth / 2,
+    scene.items.push(textItem(chartText("timeAxis", options), margin.left + scene.plotWidth / 2,
       margin.top + scene.plotHeight + 60 * scale, {
         fill: textColor, anchor: "middle", fontSize: 16 * scale, fontWeight: "bold"
       }));
@@ -204,26 +240,17 @@ var ChartRenderer = (function() {
         fill: textColor, anchor: "end", fontSize: 14 * scale, fontWeight: "bold"
       }));
     }
-    scene.items.push(textItem("表面电位 V (V)", 20 * scale, margin.top + scene.plotHeight / 2, {
+    scene.items.push(textItem(chartText("potentialAxis", options), 20 * scale, margin.top + scene.plotHeight / 2, {
       fill: textColor, anchor: "middle", fontSize: 16 * scale, fontWeight: "bold", rotate: -90
     }));
-    scene.items.push(textItem(scene.title, margin.left + scene.plotWidth / 2, margin.top - 22 * scale, {
-      fill: "#1a1a2e", anchor: "middle", fontSize: 18 * scale, fontWeight: "bold"
-    }));
+    addTitle(scene);
 
-    addLegend(scene, datasets, colors, scale, margin.left + scene.plotWidth - 280 * scale);
+    addLegend(scene, datasets, colors, scale);
     return scene;
   }
 
-  function createEtNtScene(datasets, colors, width, height) {
-    var scale = scaleFor(width, height);
-    var margin = {
-      top: 55 * scale,
-      right: 50 * scale,
-      bottom: 105 * scale,
-      left: 100 * scale
-    };
-    var scene = baseScene(width, height, margin, "聚合物面陷阱能级分布 (Surface Trap Density)");
+  function createEtNtScene(datasets, colors, width, height, options) {
+    var scene = layoutScene(datasets, width, height, true, options), scale = scene.scale, margin = scene.margin;
     var xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
 
     (datasets || []).forEach(function(dataset) {
@@ -261,7 +288,7 @@ var ChartRenderer = (function() {
       return margin.top + scene.plotHeight - (value - yMin) / (yMax - yMin) * scene.plotHeight;
     }
 
-    scene.items.push(rect(0, 0, width, height, { fill: "#FFFFFF" }));
+    scene.items.push(rect(0, 0, width, scene.height, { fill: "#FFFFFF" }));
     addGridAndAxes(scene, xMin, xMax, yMin, yMax, toX, toY, scale);
 
     function addCurve(energies, densities, color, dashed) {
@@ -304,30 +331,27 @@ var ChartRenderer = (function() {
         fill: textColor, anchor: "middle", fontSize: 14 * scale, fontWeight: "bold"
       }));
     }
-    scene.items.push(textItem("陷阱能级深度 Eₜ (eV)", margin.left + scene.plotWidth / 2,
+    scene.items.push(textItem(chartText("energyAxis", options), margin.left + scene.plotWidth / 2,
       margin.top + scene.plotHeight + 60 * scale, {
         fill: textColor, anchor: "middle", fontSize: 16 * scale, fontWeight: "bold"
       }));
-    scene.items.push(textItem(
-      "实线：实际测量时间范围内拟合　　虚线：测量时间范围外的模型外推（不代表实测数据）",
-      margin.left + scene.plotWidth / 2,
-      margin.top + scene.plotHeight + 84 * scale,
-      { fill: "#475569", anchor: "middle", fontSize: 12 * scale }
-    ));
+    scene.noteLines.forEach(function (text, index) {
+      scene.items.push(textItem(text, margin.left + scene.plotWidth / 2,
+        margin.top + scene.plotHeight + (84 + index * 17) * scale,
+        { fill: "#475569", anchor: "middle", fontSize: 12 * scale }));
+    });
     for (var yi = 0; yi <= 5; yi++) {
       var vy = yMin + (yMax - yMin) * yi / 5;
       scene.items.push(textItem(vy.toExponential(1), margin.left - 12 * scale, toY(vy) + 5 * scale, {
         fill: textColor, anchor: "end", fontSize: 14 * scale, fontWeight: "bold"
       }));
     }
-    scene.items.push(textItem("面陷阱密度 Nₜ (eV⁻¹·m⁻²)", 18 * scale, margin.top + scene.plotHeight / 2, {
+    scene.items.push(textItem(chartText("densityAxis", options), 18 * scale, margin.top + scene.plotHeight / 2, {
       fill: textColor, anchor: "middle", fontSize: 16 * scale, fontWeight: "bold", rotate: -90
     }));
-    scene.items.push(textItem(scene.title, margin.left + scene.plotWidth / 2, margin.top - 22 * scale, {
-      fill: "#1a1a2e", anchor: "middle", fontSize: 18 * scale, fontWeight: "bold"
-    }));
+    addTitle(scene);
 
-    addLegend(scene, datasets, colors, scale, margin.left + 10 * scale);
+    addLegend(scene, datasets, colors, scale);
     return scene;
   }
 
@@ -469,10 +493,10 @@ var ChartRenderer = (function() {
   }
 
   function canvasSize(canvas) {
-    var rectangle = canvas.parentElement.getBoundingClientRect();
+    var parent = canvas.parentElement;
     return {
-      width: rectangle.width > 100 ? rectangle.width : 900,
-      height: rectangle.height > 250 ? rectangle.height : 600
+      width: parent.clientWidth > 100 ? parent.clientWidth : 900,
+      height: Math.max(420, parent.clientHeight || 600)
     };
   }
 
@@ -485,24 +509,24 @@ var ChartRenderer = (function() {
   }
 
   return {
-    drawVtChart: function(canvas, datasets, colors) {
+    drawVtChart: function(canvas, datasets, colors, options) {
       var size = canvasSize(canvas);
-      renderCanvas(canvas, createVtScene(datasets, colors, size.width, size.height));
+      renderCanvas(canvas, createVtScene(datasets, colors, size.width, size.height, options));
     },
 
-    drawEtNtChart: function(canvas, datasets, colors) {
+    drawEtNtChart: function(canvas, datasets, colors, options) {
       var size = canvasSize(canvas);
-      renderCanvas(canvas, createEtNtScene(datasets, colors, size.width, size.height));
+      renderCanvas(canvas, createEtNtScene(datasets, colors, size.width, size.height, options));
     },
 
     exportVtSvg: function(datasets, colors, options) {
       var size = exportSize(options);
-      return sceneToSvg(createVtScene(datasets, colors, size.width, size.height));
+      return sceneToSvg(createVtScene(datasets, colors, size.width, size.height, options));
     },
 
     exportEtNtSvg: function(datasets, colors, options) {
       var size = exportSize(options);
-      return sceneToSvg(createEtNtScene(datasets, colors, size.width, size.height));
+      return sceneToSvg(createEtNtScene(datasets, colors, size.width, size.height, options));
     }
   };
 })();

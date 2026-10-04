@@ -21,6 +21,7 @@
 
 * { box-sizing: border-box; }
 html, body { height: 100%; }
+html { overflow: auto; }
 body { margin: 0; color: var(--ink); background: var(--paper); font-family: Inter, "Noto Sans SC", "Microsoft YaHei", Arial, sans-serif; font-size: 13px; -webkit-font-smoothing: antialiased; overflow: hidden; }
 button, input, select { font: inherit; }
 button, label { -webkit-tap-highlight-color: transparent; }
@@ -154,7 +155,7 @@ html[lang="zh-CN"] .language-toggle [data-language-zh], html[lang="en"] .languag
 .tool-button:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-pale); }
 .tool-button.danger { color: var(--danger); }
 .tool-button.danger:hover { border-color: #d7aaa7; background: var(--danger-bg); }
-.chart-container { position: relative; flex: 1; min-height: 0; background: #fff; overflow: hidden; }
+.chart-container { position: relative; flex: 1; min-height: 0; background: #fff; overflow: auto; scrollbar-gutter: stable; }
 .chart-container canvas { display: none; max-width: 100%; height: auto; }
 .empty-state { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-bottom: 25px; color: var(--soft); text-align: center; }
 .empty-state svg { width: 120px; height: 80px; margin-bottom: 17px; fill: none; stroke: #d2dde0; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
@@ -196,7 +197,11 @@ html[lang="zh-CN"] .language-toggle [data-language-zh], html[lang="en"] .languag
   .tab-btn { min-width: 145px; }
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 1023px) and (pointer: fine) {
+  body { overflow: auto; }
+}
+
+@media (max-width: 1023px) and (pointer: coarse) {
   body { overflow: auto; }
   .desktop-blocker { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 24px; background: var(--paper); }
   .desktop-blocker > div { max-width: 420px; padding: 32px; text-align: center; background: white; border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
